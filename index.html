@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#007BFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Glute Tracker">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon_192.png">
+<title>Glute Workout Tracker</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .nav {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .nav button {
+    margin: 5px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .nav button.active {
+    background-color: #0056b3;
+  }
+  .day-section {
+    display: none;
+  }
+  .day-section.active {
+    display: block;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background-color: #007BFF;
+    color: white;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  .notes {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  .progress-container {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .progress-bar {
+    height: 20px;
+    background-color: #28a745;
+    width: 0;
+    transition: width 0.3s;
+  }
+  .reset-btn {
+    display: block;
+    margin: 0 auto;
+    padding: 10px 20px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<h1>Glute-Focused Workout Tracker</h1>
+<!-- Week selector to switch between 20 weeks -->
+<div class="week-selector" style="text-align:center; margin-bottom: 15px;">
+  <label for="weekSelect">Week:</label>
+  <select id="weekSelect"></select>
+</div>
+<div class="progress-container">
+  <div id="progressBar" class="progress-bar"></div>
+</div>
+<div class="nav" id="navButtons">
+  <!-- Navigation buttons will be inserted here -->
+</div>
+<div id="workoutContainer">
+  <!-- Workout tables will be inserted here -->
+</div>
+
+<!-- Overview of progress across all weeks -->
+<div class="week-summary" style="margin-top:20px;">
+  <h3 style="text-align:center;">20‑Week Progress</h3>
+  <ul id="weekSummaryList" style="list-style:none;padding-left:0;"></ul>
+</div>
+<button class="reset-btn" onclick="resetData()">Reset All Data</button>
+
+<script>
+const workoutData = {
+  "Monday": [
+    { name: 'Barbell Hip Thrust', sets: 4, reps: '6–8' },
+    { name: 'Romanian Deadlift', sets: 4, reps: '6–8' },
+    { name: 'Bulgarian Split Squat', sets: 3, reps: '8–10 / leg' },
+    { name: 'Seated Leg Curl', sets: 3, reps: '10–12' },
+    { name: 'Cable Kickbacks', sets: 3, reps: '12–15' }
+  ],
+  "Tuesday": [
+    { name: 'Machine Chest Fly', sets: 3, reps: '10–12' },
+    { name: 'Incline Dumbbell Press', sets: 4, reps: '6–8' },
+    { name: 'Dumbbell Shoulder Press', sets: 3, reps: '8–10' },
+    { name: 'Lateral Raises', sets: 4, reps: '12–15' }
+  ],
+  "Wednesday": [
+    { name: 'Squat', sets: 4, reps: '6–8' },
+    { name: 'Leg Press (high & wide)', sets: 3, reps: '10–12' },
+    { name: 'Walking Lunges', sets: 3, reps: '10–12 / leg' },
+    { name: 'Leg Extension', sets: 3, reps: '12–15' },
+    { name: 'Adductor Machine', sets: 3, reps: '12–15' }
+  ],
+  "Thursday": [
+    { name: 'Lat Pulldown', sets: 4, reps: '8–12' },
+    { name: 'Chest-Supported Dumbbell Row', sets: 3, reps: '8–10' },
+    { name: 'Seated Row', sets: 3, reps: '10–12' },
+    { name: 'Overhead Rope Triceps Extension', sets: 3, reps: '10–12' },
+    { name: 'Bicep Curl', sets: 3, reps: '10–12' },
+    { name: 'Triangle Pushdown', sets: 3, reps: '10–12' },
+    { name: 'Hammer Curl', sets: 3, reps: '10–12' },
+    { name: 'Single Arm Triceps Pushdown', sets: 3, reps: '12–15' }
+  ],
+  "Friday": [
+    { name: 'Hip Thrust (light, slow)', sets: 4, reps: '12–15' },
+    { name: '45° Back Extension', sets: 4, reps: '10–12' },
+    { name: 'Hip Abduction Machine', sets: 4, reps: '15–20' },
+    { name: 'Cable Kickbacks', sets: 3, reps: '12–15' },
+    { name: 'Step-Ups', sets: 3, reps: '10 / leg' }
+  ]
+};
+
+// Current week being viewed (1-20). Default to 1 on first load.
+let currentWeek = 1;
+// Calculate total sets per week once based on workoutData
+const totalSetsPerWeek = Object.values(workoutData).reduce((total, exercises) => {
+  return total + exercises.reduce((sum, ex) => sum + ex.sets, 0);
+}, 0);
+
+function init() {
+  const nav = document.getElementById('navButtons');
+  const container = document.getElementById('workoutContainer');
+
+  // Populate the week selector with 20 options
+  const weekSelect = document.getElementById('weekSelect');
+  for (let i = 1; i <= 20; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = i;
+    if (i === currentWeek) option.selected = true;
+    weekSelect.appendChild(option);
+  }
+  // Update currentWeek when selection changes and reload stored values
+  weekSelect.addEventListener('change', (e) => {
+    currentWeek = parseInt(e.target.value);
+    loadWeekData();
+    updateProgress();
+  });
+
+  Object.keys(workoutData).forEach((day, index) => {
+    // Create nav button
+    const btn = document.createElement('button');
+    btn.textContent = day;
+    btn.addEventListener('click', () => showDay(day));
+    if (index === 0) btn.classList.add('active');
+    nav.appendChild(btn);
+
+    // Create day section
+    const section = document.createElement('div');
+    section.id = `section-${day}`;
+    section.classList.add('day-section');
+    if (index === 0) section.classList.add('active');
+
+    // Add table
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    ['Exercise', 'Sets', 'Reps', 'Log (weight x reps for each set)', 'Notes'].forEach(text => {
+      const th = document.createElement('th');
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    workoutData[day].forEach((exercise, exIndex) => {
+      const row = document.createElement('tr');
+      // Exercise name
+      const nameCell = document.createElement('td');
+      nameCell.textContent = exercise.name;
+      row.appendChild(nameCell);
+      // Sets
+      const setsCell = document.createElement('td');
+      setsCell.textContent = exercise.sets;
+      row.appendChild(setsCell);
+      // Reps
+      const repsCell = document.createElement('td');
+      repsCell.textContent = exercise.reps;
+      row.appendChild(repsCell);
+      // Log input fields for each set
+      const logCell = document.createElement('td');
+      for (let s = 0; s < exercise.sets; s++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = `Set ${s+1}`;
+        // Store baseKey for reference; actual key will be prefixed with currentWeek on save
+        const baseKey = `${day}-${exIndex}-set${s}`;
+        input.dataset.baseKey = baseKey;
+        // Set initial value based on week 1 (currentWeek will be 1 on first load; later loadWeekData will adjust)
+        input.value = localStorage.getItem(`week${currentWeek}-` + baseKey) || '';
+        input.addEventListener('input', (e) => {
+          const bk = e.target.dataset.baseKey;
+          const key = `week${currentWeek}-` + bk;
+          localStorage.setItem(key, e.target.value);
+          updateProgress();
+        });
+        logCell.appendChild(input);
+      }
+      row.appendChild(logCell);
+      // Notes field
+      const notesCell = document.createElement('td');
+      const notes = document.createElement('input');
+      notes.type = 'text';
+      notes.className = 'notes';
+      notes.placeholder = 'Notes';
+      const notesBase = `${day}-${exIndex}-notes`;
+      notes.dataset.baseKey = notesBase;
+      notes.value = localStorage.getItem(`week${currentWeek}-` + notesBase) || '';
+      notes.addEventListener('input', (e) => {
+        const bk = e.target.dataset.baseKey;
+        const key = `week${currentWeek}-` + bk;
+        localStorage.setItem(key, e.target.value);
+      });
+      notesCell.appendChild(notes);
+      row.appendChild(notesCell);
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    container.appendChild(section);
+  });
+
+  // After generating all elements, load data for the initial week and update progress
+  loadWeekData();
+  updateProgress();
+}
+
+function showDay(day) {
+  // Hide all sections
+  document.querySelectorAll('.day-section').forEach(section => {
+    section.classList.remove('active');
+  });
+  // Remove active class from all buttons
+  document.querySelectorAll('.nav button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  // Show selected section
+  document.getElementById(`section-${day}`).classList.add('active');
+  // Set active button
+  document.querySelectorAll('.nav button').forEach(btn => {
+    if (btn.textContent === day) btn.classList.add('active');
+  });
+}
+
+function updateProgress() {
+  // Count completed sets for current week
+  let completedSets = 0;
+  document.querySelectorAll('input[data-base-key]').forEach(input => {
+    // Only count set inputs (dataset.baseKey contains 'set')
+    if (input.dataset.baseKey && input.dataset.baseKey.includes('-set')) {
+      if (input.value.trim() !== '') completedSets++;
+    }
+  });
+  const percent = totalSetsPerWeek === 0 ? 0 : Math.min(100, Math.round((completedSets / totalSetsPerWeek) * 100));
+  const progressBar = document.getElementById('progressBar');
+  progressBar.style.width = percent + '%';
+  progressBar.textContent = percent + '%';
+
+  // Update summary for all 20 weeks
+  const summaryList = document.getElementById('weekSummaryList');
+  if (summaryList) {
+    summaryList.innerHTML = '';
+    for (let w = 1; w <= 20; w++) {
+      let comp = 0;
+      // iterate through localStorage keys for this week
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('week' + w + '-') && key.includes('-set')) {
+          const val = localStorage.getItem(key);
+          if (val && val.trim() !== '') comp++;
+        }
+      }
+      const p = totalSetsPerWeek === 0 ? 0 : Math.min(100, Math.round((comp / totalSetsPerWeek) * 100));
+      const li = document.createElement('li');
+      li.textContent = `Week ${w}: ${p}%`;
+      summaryList.appendChild(li);
+    }
+  }
+}
+
+// Load stored values for the selected week into all inputs
+function loadWeekData() {
+  document.querySelectorAll('input[data-base-key]').forEach(input => {
+    const base = input.dataset.baseKey;
+    const key = `week${currentWeek}-` + base;
+    input.value = localStorage.getItem(key) || '';
+  });
+}
+
+function resetData() {
+  if (confirm('Are you sure you want to reset all stored data?')) {
+    localStorage.clear();
+    // Reset all input fields
+    document.querySelectorAll('input[type="text"]').forEach(input => {
+      input.value = '';
+    });
+    updateProgress();
+    loadWeekData();
+  }
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
